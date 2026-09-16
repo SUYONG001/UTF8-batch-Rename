@@ -14,7 +14,8 @@ def parse_rename_commands(file_path):
     rename_commands = []
     
     try:
-        with open(file_path, 'r', encoding='utf-8') as f:
+        # 使用 utf-8-sig 自动兼容带 BOM 的 UTF-8 文件
+        with open(file_path, 'r', encoding='utf-8-sig') as f:
             lines = f.readlines()
         
         for line_num, line in enumerate(lines, 1):
@@ -69,6 +70,17 @@ def execute_rename_commands():
     执行重命名命令
     支持文件和文件夹重命名
     """
+    # ================= 核心修复：强制切换工作目录 =================
+    # 获取脚本所在的目录，并切换过去。这样双击运行时就不会停留在 system32 目录
+    try:
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        os.chdir(script_dir)
+    except Exception as e:
+        print(f"切换工作目录失败: {e}")
+        input("按回车键退出...")
+        return
+    # ============================================================
+
     current_dir = os.getcwd()
     print(f"工作目录: {current_dir}")
     print("=" * 50)
@@ -86,8 +98,11 @@ def execute_rename_commands():
         input("按回车键退出...")
         return
     
-    # 如果有多个txt文件，让用户选择
-    if len(txt_files) > 1:
+    # 如果有多个txt文件，优先选择 Rename.txt，否则让用户选择
+    if 'Rename.txt' in txt_files:
+        txt_file = 'Rename.txt'
+        print(f"自动选择文件: {txt_file}")
+    elif len(txt_files) > 1:
         txt_file = select_txt_file(txt_files)
     else:
         txt_file = txt_files[0]
@@ -102,7 +117,7 @@ def execute_rename_commands():
         return
     
     if not commands:
-        print("文件中没有找到有效的重命名命令！")
+        print(f"文件 '{txt_file}' 中没有找到有效的重命名命令！")
         input("按回车键退出...")
         return
     
